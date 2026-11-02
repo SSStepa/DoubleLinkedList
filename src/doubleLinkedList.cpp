@@ -8,6 +8,8 @@ WORK_RES ListCtor(doubleLinkedList_t *list ON_DBG(, const char *listVariableName
     assert(functionCreationName);
     assert(lineCreationNumber > 0);
 
+    WORK_RES statusCode = OK;
+
     $INFO("STARTING initialization of list %s", ++listVariableName); // to skip "&" in the begining of name
     ON_DBG(
         if (list -> list != NULL || list -> free != 0)
@@ -18,7 +20,7 @@ WORK_RES ListCtor(doubleLinkedList_t *list ON_DBG(, const char *listVariableName
     list -> listLen     = LIST_INIT_SIZE;
     list -> nodesAmount = 1;
     list -> list    = (doubleLinkedListNode_t *) calloc(LIST_INIT_SIZE, sizeof(doubleLinkedListNode_t));
-    if (list == NULL) {
+    if (list -> list == NULL) {
         return $ERR(NOMEM, "ERROR WHILE TRYING TO CREATE LIST: NOT ENOUGH MEMORY");
     }
 
@@ -73,6 +75,7 @@ WORK_RES ListDtor(doubleLinkedList_t *list)
 
     ON_DBG(
         RUN_COMMAND(ListVerify(list), "WRONG LIST WHILE TRYING TO DTOR");
+        RUN_COMMAND(ListDump(list), "WRONG LIST TO DUMP");
     )
 
     free(list -> list);
@@ -92,142 +95,242 @@ WORK_RES ListDtor(doubleLinkedList_t *list)
     return OK;
 }
 
-WORK_RES ListGetHead(doubleLinkedList_t *list, size_t)
+WORK_RES ListGetHead(doubleLinkedList_t *list, size_t *headInd)
+{
+    assert(list);
+    assert(headInd);
+
+    WORK_RES statusCode = OK;
+
+    $INFO("STARTING getting head of list %s", (list -> debuggingInfo).VariableName);
+    ON_DBG(
+        RUN_COMMAND(ListVerify(list), "WRONG LIST WHILE TRYING TO GET HEAD");
+        RUN_COMMAND(ListDump(list), "WRONG LIST TO DUMP");
+    )
+
+    *headInd = (list -> list)[0].next;
+
+    $INFO("ENDING getting head of list %s", (list -> debuggingInfo).VariableName);
+
+    return statusCode;
+}
+
+WORK_RES ListGetTail(doubleLinkedList_t *list, size_t *tailInd)
+{
+    assert(list);
+    assert(tailInd);
+
+    WORK_RES statusCode = OK;
+
+    $INFO("STARTING getting tail of list %s", (list -> debuggingInfo).VariableName);
+    ON_DBG(
+        RUN_COMMAND(ListVerify(list), "WRONG LIST WHILE TRYING TO GET TAIL");
+        RUN_COMMAND(ListDump(list), "WRONG LIST TO DUMP");
+    )
+
+    *tailInd = (list -> list)[0].prev;
+
+    $INFO("ENDING getting tail of list %s", (list -> debuggingInfo).VariableName);
+
+    return statusCode;
+}
+
+WORK_RES ListGetNextElem(doubleLinkedList_t *list, size_t ind, size_t *nextInd)
+{
+    assert(list);
+    assert(nextInd);
+
+    WORK_RES statusCode = OK;
+
+    $INFO("STARTING getting next element of list %s to <%zu> element", (list -> debuggingInfo).VariableName, ind);
+    ON_DBG(
+        RUN_COMMAND(ListVerify(list), "WRONG LIST WHILE TRYING TO GET NEXT ELEMENT TO INDEX");
+        RUN_COMMAND(ListDump(list), "WRONG LIST TO DUMP");
+        if (ind == (list -> list)[0].prev || (list -> list)[ind].prev == -1)
+            return $ERR(WRIN, "WRONG INDEX TO GET ELEMENT");
+    )
+
+    *nextInd = (list -> list)[ind].next;
+
+    $INFO("ENDING getting next element of list %s to <%zu> element", (list -> debuggingInfo).VariableName, ind);
+
+    return statusCode;
+}
+
+WORK_RES ListGetPrevElem(doubleLinkedList_t *list, size_t ind, size_t *prevInd)
+{
+    assert(list);
+    assert(prevInd);
+
+    WORK_RES statusCode = OK;
+
+    $INFO("STARTING getting prev element of list %s to <%zu> element", (list -> debuggingInfo).VariableName, ind);
+    ON_DBG(
+        RUN_COMMAND(ListVerify(list), "WRONG LIST WHILE TRYING TO GET PREV ELEMENT");
+        RUN_COMMAND(ListDump(list), "WRONG LIST TO DUMP");
+        if (ind == (list -> list)[0].next || (list -> list)[ind].prev == -1)
+            return $ERR(WRIN, "WRONG INDEX TO GET ELEMENT");
+    )
+
+    *prevInd = (list -> list)[ind].prev;
+
+    $INFO("ENDING getting prev element of list %s to <%zu> element", (list -> debuggingInfo).VariableName, ind);
+
+    return statusCode;
+}
+
+WORK_RES ListGetElementByNumber(doubleLinkedList_t *list, size_t numberInList, size_t *elemInd)
+{
+    assert(list);
+    assert(elemInd);
+
+    WORK_RES statusCode = OK;
+
+    $INFO("STARTING getting element of list %s to with number <%zu>", (list -> debuggingInfo).VariableName, numberInList);
+    ON_DBG(
+        RUN_COMMAND(ListVerify(list), "WRONG LIST WHILE TRYING TO GET ELEMENT BY IT'S NUMBER");
+        RUN_COMMAND(ListDump(list), "WRONG LIST TO DUMP");
+        if (numberInList <= list -> nodesAmount || numberInList == 0)
+            return $ERR(WRIN, "WRONG INDEX TO GET ELEMENT");
+    )
+
+    ssize_t nodeInd = 0;
+    for (size_t ind = 0; ind <= numberInList; ind++) {
+        nodeInd = (list -> list)[nodeInd].next;
+    }
+
+    *elemInd = nodeInd;
+
+    $INFO("ENDING getting element of list %s to with number <%zu>", (list -> debuggingInfo).VariableName, numberInList);
+
+    return OK;
+}
+
+WORK_RES ListGetElementByValue(doubleLinkedList_t *list, listNodeVal nodeVal, size_t *elemInd)
+{
+    assert(list);
+    assert(elemInd);
+
+    WORK_RES statusCode = OK;
+
+    $INFO("STARTING getting first element of list %s to with value <%d>", (list -> debuggingInfo).VariableName, nodeVal);
+    ON_DBG(
+        RUN_COMMAND(ListVerify(list), "WRONG LIST WHILE TRYING TO GET ELEMENT BY IT'S NUMBER");
+        RUN_COMMAND(ListDump(list), "WRONG LIST TO DUMP");
+    )
+
+    *elemInd = 0;
+    for (size_t ind = 0; ind < list -> listLen; ind++) {
+        *elemInd = (list -> list)[*elemInd].next;
+        if ((list -> list)[*elemInd].val == nodeVal) {
+            $INFO("ENDING getting element of list %s to with value <%d>", (list -> debuggingInfo).VariableName, nodeVal);
+            return OK;
+        }
+    }
+
+    $INFO("ENDING getting first element of list %s to with value <%d>", (list -> debuggingInfo).VariableName, nodeVal);
+
+    return $ERR(WRIN, "NO SUCH ELEMENT IN LIST");
+}
+
+WORK_RES ListResizeUp(doubleLinkedList_t *list)
 {
     assert(list);
 
+    WORK_RES statusCode = OK;
+
+    $INFO("STARTING resizing up list %s", (list -> debuggingInfo).VariableName);
     ON_DBG(
-        RUN_COMMAND(ListVerify(list), "WRONG LIST WHILE TRYING TO GET HEAD");
+        RUN_COMMAND(ListVerify(list), "WRONG LIST WHILE TRYING TO CREATE NEW HEAD");
+        RUN_COMMAND(ListDump(list),   "WRONG LIST TO DUMP");
     )
 
+    doubleLinkedListNode_t *temp = (doubleLinkedListNode_t *) realloc(list -> list, (list -> listLen) * 2);
+    if (temp == NULL)
+        return $ERR(NOMEM, "NOT ENOUGH MEMORY TO RESIZE UP");
+    list -> list = temp;
 
+    RUN_COMMAND(InitFreeValuesList(&((list -> list)[list -> listLen]), list -> listLen, list -> listLen - 1), "ERROR WHILE INITING NEW VALUES");
+    list -> listLen *= 2;
+
+    ON_DBG(
+        RUN_COMMAND(ListVerify(list), "WRONG LIST WHILE TRYING TO CREATE NEW HEAD");
+        RUN_COMMAND(ListDump(list),   "WRONG LIST TO DUMP");
+    )
+    $INFO("ENDING resizing up list %s", (list -> debuggingInfo).VariableName);
+    return statusCode;
 }
 
-// WORK_RES ListAddNode(doubleLinkedList_t *list, size_t nodeIndex, listNodeVal val)
-// {
-//     assert(list);
+WORK_RES ListAddNewNode(doubleLinkedList_t *list, size_t NodeInd, listNodeVal NodeVal)
+{
+    assert(list);
 
-//     WORK_RES statusCode = OK;
+    WORK_RES statusCode = OK;
 
-//     ON_DBG(
-//         RUN_COMMAND(ListVerify(list), "WRONG LIST TO ADD NODE");
-//     )
+    $INFO("STARTING adding new element to list %s after <%zu>", (list -> debuggingInfo).VariableName, NodeInd);
+    ON_DBG(
+        RUN_COMMAND(ListVerify(list), "WRONG LIST WHILE TRYING TO CREATE NEW HEAD");
+        RUN_COMMAND(ListDump(list),   "WRONG LIST TO DUMP");
+    )
 
-//     if (nodeIndex == 0) {
-//         if (list -> head == 0) {
-//             list -> head = 1;
-//             list -> tail = 1;
-//             (list -> list)[1].next = 0;
-//             (list -> list)[1].prev = 0;
-//             (list -> list)[1].val  = val;          
-//         } else {
-//             size_t newHead = 0;
-//             RUN_COMMAND(ListGetBlankNode(list, &newHead), "ERROR WHILE TRYING TO FIND BLANK ELEMENT");
+    size_t freeTemp = (list -> list)[list -> free].next;
 
-//             (list -> list)[newHead].val  = val;
-//             (list -> list)[newHead].prev = 0;
-//             (list -> list)[newHead].next = list -> head;
-//             (list -> list)[list -> head].prev = newHead;
-//             list -> head = newHead;
-//         }
-//     }
+    (list -> list)[list -> free].val                  = NodeVal;
+    (list -> list)[list -> free].next                 = (list -> list)[NodeInd].next;
+    (list -> list)[(list -> list)[NodeInd].next].prev = list -> free;
+    (list -> list)[list -> free].prev                 = NodeInd;
+    (list -> list)[NodeInd].next                      = list -> free;
 
-//     size_t newNode = 0;
-//     RUN_COMMAND(ListGetBlankNode(list, &newNode), "ERROR WHILE TRYING TO FIND BLANK ELEMENT");
+    list -> free = freeTemp;
+    if (list -> free == -1) {
+        RUN_COMMAND(ListResizeUp(list), "PROBLEM WHILE TRYING TO RESIZE LIST UP");
+    }
     
-//     if (nodeIndex == list -> tail) {
-//         list -> tail = newNode;
-//     } else 
-//         (list -> list)[(list -> list)[nodeIndex].next].prev = newNode;
-    
-//     (list -> list)[newNode].next   = (list -> list)[nodeIndex].next;
-//     (list -> list)[newNode].prev   = nodeIndex;
-//     (list -> list)[nodeIndex].next = newNode;
-//     (list -> list)[newNode].val    = val;
+    ON_DBG(
+        RUN_COMMAND(ListVerify(list), "WRONG LIST AFTER CREATING NEW HEAD");
+        RUN_COMMAND(ListDump(list),   "WRONG LIST TO DUMP");
+    )
+    $INFO("ENDING adding new element to list %s after <%zu>", (list -> debuggingInfo).VariableName, NodeInd);
 
-//     ON_DBG(
-//         RUN_COMMAND(ListVerify(list), "WRONG LIST TO ADD NODE");
-//     )
+    return statusCode;
+}
 
-//     return statusCode;
-// }
+WORK_RES ListDeleteNode(doubleLinkedList_t *list, size_t NodeInd)
+{
+    assert(list);
 
-// WORK_RES ListGetBlankNode(doubleLinkedList_t *list, size_t *indToFill)
-// {
-//     assert(list);
+    WORK_RES statusCode = OK;
 
-//     for (size_t ind = 0; ind < list -> listLen; ind++) {
-//         if ((list -> list)[ind].next == -1) {
-//             *indToFill = ind;
-//             return OK;
-//         }
-//     }
+    $INFO("STARTING deleting element form list %s with index <%zu>", (list -> debuggingInfo).VariableName, NodeInd);
 
-//     doubleLinkedList_t *temp = (doubleLinkedList_t *) realloc(list, (list -> listLen) * RESIZE_UP_SIZE);
-//     if (temp == NULL)
-//         return $ERR(NOMEM, "NOT ENOUGH MEMORY TO RESIZE LIST UP");
-//     list = temp;
+    ON_DBG(
+        RUN_COMMAND(ListVerify(list), "WRONG LIST AFTER CREATING NEW HEAD");
+        RUN_COMMAND(ListDump(list),   "WRONG LIST TO DUMP");
+        if (NodeInd == 0 || NodeInd >= list -> listLen || (list -> list)[NodeInd].prev == -1)
+            return $ERR(WRIN, "WRONG INPUT DATA FOR FUNCTION TO DELETE NODE");
+    )
 
-//     for (size_t ind = list -> listLen; ind < (list -> listLen) * RESIZE_UP_SIZE; ind++) {
-//         (list -> list)[ind].next = -1;
-//         (list -> list)[ind].prev = -1;
+    (list -> list)[(list -> list)[NodeInd].next].prev = (list -> list)[NodeInd].prev;
+    (list -> list)[(list -> list)[NodeInd].prev].next = (list -> list)[NodeInd].next;
 
-//         ON_DBG(
-//             (list -> list)[ind].val = POISON_VAL;
-//         )
-//     }
+    (list -> list)[NodeInd].next = list -> free;
+    (list -> list)[NodeInd].prev = -1;
 
-//     *indToFill = list -> listLen;
-//     list -> listLen *= RESIZE_UP_SIZE;
+    ON_DBG(
+        (list -> list)[NodeInd].val = POISON_VAL;
+        RUN_COMMAND(ListVerify(list), "WRONG LIST AFTER CREATING NEW HEAD");
+        RUN_COMMAND(ListDump(list),   "WRONG LIST TO DUMP");
+    )
 
-//     return OK;
-// }
-
-// WORK_RES ListDeleteNode(doubleLinkedList_t *list, size_t nodeIndex)
-// {
-//     assert(list); //TODO: check if element index is in out data
-
-//     if (nodeIndex == list -> head) {
-//         (list -> list)[(list -> list)[nodeIndex].next].prev = 0;
-//         list -> head = (list -> list)[nodeIndex].next;
-
-//         (list -> list)[nodeIndex].next = -1;
-//         (list -> list)[nodeIndex].prev = -1;
-
-//         ON_DBG(
-//             (list -> list)[nodeIndex].val = POISON_VAL;
-//         )
-
-//     } else if (nodeIndex == list -> tail) {
-//         (list -> list)[(list -> list)[nodeIndex].prev].next = 0;
-//         list -> tail = (list -> list)[nodeIndex].prev;
-
-//         (list -> list)[nodeIndex].next = -1;
-//         (list -> list)[nodeIndex].prev = -1;
-
-//         ON_DBG(
-//             (list -> list)[nodeIndex].val = POISON_VAL;
-//         )
-
-//     } else {
-//         (list -> list)[(list -> list)[nodeIndex].next].prev = (list -> list)[nodeIndex].prev;
-//         (list -> list)[(list -> list)[nodeIndex].prev].next = (list -> list)[nodeIndex].next;
-        
-//         (list -> list)[nodeIndex].next = -1;
-//         (list -> list)[nodeIndex].prev = -1;
-
-//         ON_DBG(
-//             (list -> list)[nodeIndex].val = POISON_VAL;
-//         )
-
-//     }
-    
-//     return OK;
-// }
+    $INFO("ENDING deleting element form list %s with index <%zu>", (list -> debuggingInfo).VariableName, NodeInd);
+    return OK;
+}
 
 WORK_RES ListDump(doubleLinkedList_t *list)
 {
-    assert(list); // TODO: check that pointer is valid
+    assert(list);
+
+    WORK_RES statusCode = OK;
 
     LOG_START();
     LOG_PRINTF("<h2>Hi it is BEGINING of the list dump</h2>\n")
@@ -241,12 +344,17 @@ WORK_RES ListDump(doubleLinkedList_t *list)
         LOG_PRINTF("<h3>It has error status %d and error message <%s> now </h3>\n", (list -> debuggingInfo).err, (list -> debuggingInfo).errorText);
     )
 
-    LOG_PRINTF("Stack text dump:\n");
+    LOG_PRINTF("List text dump:\n");
     LOG_PRINTF("val        next       prev\n");
     for (size_t ind = 0; ind < list -> listLen; ind++) {
         LOG_PRINTF("<%4d>  <%4zd>  <%4zd>\n", (list -> list)[ind].val, (list -> list)[ind].next, (list -> list)[ind].prev);
     }
-    LOG_PRINTF("Stack text dump end\n");
+    LOG_PRINTF("List text dump end\n");
+    LOG_PRINTF("List graphviz dump:\n");
+
+    // RUN_COMMAND(GenerateGraphvizFile(list), "PROBLEM WHILE TRYING TO GENERATE GRAPHVIZ FILE");
+
+    LOG_PRINTF("List graphviz dump end\n");
 
     LOG_PRINTF("<h2>END of the list dump</h2>\n<hr>\n")
     LOG_END();
@@ -259,27 +367,8 @@ WORK_RES ListVerify(doubleLinkedList_t *list)
     return OK;
 }
 
-// WORK_RES FindListNode(doubleLinkedList_t *list, size_t listNodeNumber)
-// {
-//     assert(list);
+WORK_RES GenerateGraphvizFile(doubleLinkedList_t *list)
+{
+    assert(list);
 
-//     WORK_RES statusCode = OK;
-
-//     ON_DBG(
-//         RUN_COMMAND(ListVerify(list), "VERIFICATION FAILED WHILE TRYING TO FIND ELEMENT");
-//         if (listNodeNumber > list -> nodesAmount) {
-//             return $ERR(WRIN, "NUMBER OF LIST ELEMENT IS OUT OF LIST");
-//         }
-//     )
-
-//     size_t NodeInd = 0;
-
-//     doubleLinkedListNode_t node = list -> head;
-
-//     for (size_t el = 2; el <= listNodeNumber - 1; el++) {
-//         NodeInd = node.next;
-
-
-//     }
-
-// }
+}
