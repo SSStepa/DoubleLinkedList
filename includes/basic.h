@@ -50,13 +50,7 @@ struct string_t {
     size_t len;
 };
 
-struct ErrInfo {
-    const char *fileCreationName;
-    int   creationLineName;
-    const char *creationFunctionName;
-    WORK_RES err;
-    const char *ErrorText;
-};
+
 
 /**
  * used to check that function run correctly
@@ -65,7 +59,7 @@ struct ErrInfo {
  */
 #define RUN_COMMAND(func, errorMessage)           \
     if ((statusCode = func) != OK)                \
-        return $ERR(errorMessage, statusCode)
+        return $ERR(statusCode, errorMessage)
 
 
 /**
@@ -93,23 +87,44 @@ bool IsZero(double x);
 
 //----------------------------------------------------- PRINTING VARS AND ERRORS ------------------------------------------------------------------------
 
-
+/**
+ * define to translate name of something into string (usually is used for debugging)
+ */
 #define TO_STR(str) #str
 
-const char * const LOG_FILE = "main.log";
-const int MAX_MESS_LENGTH = 50;
+/**
+ * basic log file name
+ */
+const char *const LOG_FILE = "mainLog.html";
 
+/**
+ * max length of error message
+ */
+const int MAX_MESS_LENGTH = 200;
+
+/**
+ * struct used to describe error info 
+ */
+struct debuggingInfo_t{
+    const char *VariableName;           // Name of object variable 
+    const char *fileCreationName;       // file where object was created
+    const char *functionCreationName;   // function where object was created 
+    int         lineCreationNumber;     // number of line where object was created 
+
+    const char *errorText;              // error message if error had occurred
+    WORK_RES    err;                    // error code 
+};
+
+/**
+ * fuctions used  for debugging. With macro to create call shorter Usage pattern(for all):
+ * $ind(variable) => <variable.name> = <variable.value>
+ * with line of call
+ */
 void InfoPrintfInt      (int var, const char *varName, const char *file, int line);
 void InfoPrintfStr      (const char *var, const char *varName, const char *file, int line);
 void InfoPrintfC        (char var, const char *varName, const char *file, int line);
 void InfoPrintfDouble   (double var, const char *varName, const char *file, int line);
 void InfoPrintfLlu      (size_t var, const char *varName, const char *file, int line);
-WORK_RES SetUpLog();
-WORK_RES EndLog();
-
-WORK_RES ErrorPrintf(const char *errMess, int line, const char *file, WORK_RES ErrCode, ...);
-WORK_RES StartError();
-WORK_RES EndError();
 
 #define $int(Variable) InfoPrintfInt(Variable, TO_STR(Variable), __FILE__, __LINE__)
 #define $str(Variable) InfoPrintfStr(Variable, TO_STR(Variable), __FILE__, __LINE__)
@@ -117,28 +132,39 @@ WORK_RES EndError();
 #define $dbl(Variable) InfoPrintfDouble(Variable, TO_STR(Variable), __FILE__, __LINE__)
 #define $llu(Variable) InfoPrintfLlu(Variable, TO_STR(Variable), __FILE__, __LINE__)
 
-#define $ERR(ErrCode, ErrorMessage, ...) ErrorPrintf(ErrorMessage, __LINE__, __FILE__, ErrCode, ##__VA_ARGS__)
+/**
+ * begining of new log session
+ * prints divider form previous info
+ */
+WORK_RES SetUpLog();
 
-#define $ERR_START() StartError()
+/**
+ * ending of log session(prints line that all good)
+ */
+WORK_RES EndLog();
 
-#define $ERR_END() EndError()
+WORK_RES LogPrintf(const char *messageType, const char *Mess, int line, const char *file, WORK_RES ErrCode, ...);
+WORK_RES StartError();
+WORK_RES EndError();
 
-#define ERR_INIT(errInfo, statusCode, message) \
-    errInfo.fileCreationName = __FILE__; \
-    errInfo.creationLineName = __LINE__; \
-    errInfo.creationFunctionName = __FUNCTION__; \
-    errInfo.err = statusCode; \
-    errInfo.ErrorText = message; 
+#define $ERR(ErrCode, ErrorMessage, ...)         LogPrintf("<font color=red>ERROR</font>", ErrorMessage, __LINE__, __FILE__, ErrCode, ##__VA_ARGS__)
+#define $INFO(InfoMessage, ...)           ON_DBG(LogPrintf("<font color=blue>INFO</font>", InfoMessage, __LINE__, __FILE__, OK,  ##__VA_ARGS__))
 
-#define LOG_START() \
-    FILE *logFile = fopen(LOG_FILE, "a");
+ 
 
-#define LOG_END() \
-    fclose(logFile);
+#define LOG_START()                              \
+    FILE *logFile = fopen(LOG_FILE, "a");        
+
+#define LOG_END()                                \
+    fclose(logFile);                             
+
 
 #define LOG_PRINTF(...) \
     fprintf(logFile, __VA_ARGS__); \
     fflush(logFile);
+
+
+#define DEBUGGER
 
 #ifdef DEBUGGER
 #define ON_DBG(...) __VA_ARGS__
@@ -152,16 +178,12 @@ WORK_RES EndError();
 #define MY_ASSERT(...) 
 #endif
 
-
 const char *const OPTS = "i:o:h";
 
 WORK_RES GetFileFull(const char *fileName, string_t *string);
 WORK_RES GetFileFullBin(const char *fileName, string_t *string);
-WORK_RES OutFileFull(const char *fileName, string_t *string);
-
 
 WORK_RES FlagsParse(int argc, char *const *argv, const char **FileToReadFrom, const char **FileToWriteTo);
 void ShowHelp();
-
 
 #endif

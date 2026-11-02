@@ -26,8 +26,12 @@ void InfoPrintfDouble(double var, const char *varName, const char *file, int lin
     fprintf(stderr, YEL "%s, %d:%s %s = <%s%lg%s>\n", file, line, COLOR_RESET, varName, CYN, var, COLOR_RESET);
 }
 
-WORK_RES ErrorPrintf(const char *errMess, int line, const char *file, WORK_RES ErrCode, ...)
+WORK_RES LogPrintf(const char *messageType, const char *errMess, int line, const char *file, WORK_RES ErrCode, ...)
 {
+    assert(messageType);
+    assert(errMess);
+    assert(file);
+
     LOG_START();
 
     time_t rawtime;
@@ -39,8 +43,8 @@ WORK_RES ErrorPrintf(const char *errMess, int line, const char *file, WORK_RES E
 
     va_list argsPrintf = {};
     va_start(argsPrintf, ErrCode);
-    char errMessText[MAX_MESS_LENGTH] = "";
-    vsprintf(errMessText, errMess,  argsPrintf);
+    char errMessText[MAX_MESS_LENGTH] = {};
+    vsnprintf(errMessText, MAX_MESS_LENGTH, errMess,  argsPrintf);
 
 
     #ifdef LOUD
@@ -48,7 +52,7 @@ WORK_RES ErrorPrintf(const char *errMess, int line, const char *file, WORK_RES E
     #endif
 
 
-    LOG_PRINTF("[%s\b\b] %s:%d: %s:%d %s\n", time_str, file, line, TO_STR(ErrCode), ErrCode, errMessText);
+    LOG_PRINTF("<h2>[%s] %s %s:%d: %s:%d %s</h2>\n", time_str, messageType, file, line, TO_STR(ErrCode), ErrCode, errMessText);
 
     LOG_END();
 
@@ -74,7 +78,7 @@ WORK_RES EndError()
     FILE *fileLog = fopen(LOG_FILE, "a");
     if (fileLog == NULL) return $ERR(FILEERR, "PROBLEM WITH LOG FILE");
 
-    fwrite("-------------------------------------------------------------------------------\n\n", 1, 80, fileLog);
+    fwrite("<hr>\n", 1, 6, fileLog);
 
     fclose(fileLog);
 
@@ -86,9 +90,10 @@ WORK_RES SetUpLog()
     FILE *fileLog = fopen(LOG_FILE, "a");
     if (fileLog == NULL) return $ERR(FILEERR, "PROBLEM WITH LOG FILE");
 
-    fwrite("-------------------------------------------------------------------------------\n", 1, 80, fileLog);
-    fwrite("                                 <<NEW RUN>>                                   \n", 1, 80, fileLog);
-    fwrite("-------------------------------------------------------------------------------\n\n", 1, 80, fileLog);
+    fwrite("<pre>\n", 1, 7, fileLog);
+    fwrite("<hr>\n", 1, 6, fileLog);
+    fwrite("<h2>                            **NEW RUN**                               </h2>\n", 1, 81, fileLog);
+    fwrite("<hr>\n", 1, 6, fileLog);
     
     fclose(fileLog);
     return OK;
@@ -98,7 +103,8 @@ WORK_RES EndLog()
 {
     FILE *fileLog = fopen(LOG_FILE, "a");
 
-    fwrite("PROGRAM ENDED WITH ALL GOOD", 1, 28, fileLog);
+    fwrite("<h2><font color=green>PROGRAM ENDED WITH ALL GOOD</font></h2>\n", 1, 63, fileLog);
+    fwrite("</pre>\n", 1, 8, fileLog);
 
     fclose(fileLog);
     return OK;

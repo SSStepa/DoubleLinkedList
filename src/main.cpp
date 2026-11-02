@@ -3,4 +3,14 @@
 
 int main()
 {
+    SetUpLog();
+
+    doubleLinkedList_t linkedList = {};
+
+    LIST_CTOR(&linkedList);
+    ListDtor(&linkedList);    
+
+    EndLog();
+
+    return 0;
 }
