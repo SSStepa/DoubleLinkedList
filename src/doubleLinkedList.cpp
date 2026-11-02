@@ -241,20 +241,20 @@ WORK_RES ListResizeUp(doubleLinkedList_t *list)
 
     $INFO("STARTING resizing up list %s", (list -> debuggingInfo).VariableName);
     ON_DBG(
-        RUN_COMMAND(ListVerify(list), "WRONG LIST WHILE TRYING TO CREATE NEW HEAD");
+        RUN_COMMAND(ListVerify(list), "WRONG LIST BEFORE RESIZE");
         RUN_COMMAND(ListDump(list),   "WRONG LIST TO DUMP");
     )
 
-    doubleLinkedListNode_t *temp = (doubleLinkedListNode_t *) realloc(list -> list, (list -> listLen) * 2);
+    doubleLinkedListNode_t *temp = (doubleLinkedListNode_t *) realloc(list -> list, sizeof(doubleLinkedListNode_t) * (list -> listLen) * 2);
     if (temp == NULL)
         return $ERR(NOMEM, "NOT ENOUGH MEMORY TO RESIZE UP");
     list -> list = temp;
 
-    RUN_COMMAND(InitFreeValuesList(&((list -> list)[list -> listLen]), list -> listLen, list -> listLen - 1), "ERROR WHILE INITING NEW VALUES");
+    RUN_COMMAND(InitFreeValuesList(&((list -> list)[list -> listLen]), list -> listLen, list -> listLen), "ERROR WHILE INITING NEW VALUES");
     list -> listLen *= 2;
 
     ON_DBG(
-        RUN_COMMAND(ListVerify(list), "WRONG LIST WHILE TRYING TO CREATE NEW HEAD");
+        RUN_COMMAND(ListVerify(list), "WRONG LIST AFTER RESIZE");
         RUN_COMMAND(ListDump(list),   "WRONG LIST TO DUMP");
     )
     $INFO("ENDING resizing up list %s", (list -> debuggingInfo).VariableName);
@@ -269,7 +269,7 @@ WORK_RES ListAddNewNode(doubleLinkedList_t *list, size_t NodeInd, listNodeVal No
 
     $INFO("STARTING adding new element to list %s after <%zu>", (list -> debuggingInfo).VariableName, NodeInd);
     ON_DBG(
-        RUN_COMMAND(ListVerify(list), "WRONG LIST WHILE TRYING TO CREATE NEW HEAD");
+        RUN_COMMAND(ListVerify(list), "WRONG LIST WHILE TRYING TO ADD NEW ELEMENT");
         RUN_COMMAND(ListDump(list),   "WRONG LIST TO DUMP");
     )
 
@@ -287,7 +287,7 @@ WORK_RES ListAddNewNode(doubleLinkedList_t *list, size_t NodeInd, listNodeVal No
     }
     
     ON_DBG(
-        RUN_COMMAND(ListVerify(list), "WRONG LIST AFTER CREATING NEW HEAD");
+        RUN_COMMAND(ListVerify(list), "WRONG LIST AFTER ADDING NEW ELEMENT");
         RUN_COMMAND(ListDump(list),   "WRONG LIST TO DUMP");
     )
     $INFO("ENDING adding new element to list %s after <%zu>", (list -> debuggingInfo).VariableName, NodeInd);
@@ -304,7 +304,7 @@ WORK_RES ListDeleteNode(doubleLinkedList_t *list, size_t NodeInd)
     $INFO("STARTING deleting element form list %s with index <%zu>", (list -> debuggingInfo).VariableName, NodeInd);
 
     ON_DBG(
-        RUN_COMMAND(ListVerify(list), "WRONG LIST AFTER CREATING NEW HEAD");
+        RUN_COMMAND(ListVerify(list), "WRONG LIST BEFORE DELETING ELEMENT");
         RUN_COMMAND(ListDump(list),   "WRONG LIST TO DUMP");
         if (NodeInd == 0 || NodeInd >= list -> listLen || (list -> list)[NodeInd].prev == -1)
             return $ERR(WRIN, "WRONG INPUT DATA FOR FUNCTION TO DELETE NODE");
@@ -316,9 +316,11 @@ WORK_RES ListDeleteNode(doubleLinkedList_t *list, size_t NodeInd)
     (list -> list)[NodeInd].next = list -> free;
     (list -> list)[NodeInd].prev = -1;
 
+    list -> free = NodeInd;
+
     ON_DBG(
         (list -> list)[NodeInd].val = POISON_VAL;
-        RUN_COMMAND(ListVerify(list), "WRONG LIST AFTER CREATING NEW HEAD");
+        RUN_COMMAND(ListVerify(list), "WRONG LIST AFTER DELETING ELEMENT");
         RUN_COMMAND(ListDump(list),   "WRONG LIST TO DUMP");
     )
 
