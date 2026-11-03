@@ -37,7 +37,9 @@ enum WORK_RES {
     STACK_CANARY_RIP = 15, // rip of stack canary;
 
     TAKEN_LABEL = 20, // label already has it's 
-    NO_LABEL = 21 // label does not exist
+    NO_LABEL = 21, // label does not exist
+
+    WRLINK = 30, // wrong link between nodes in list
 };
 
 /**

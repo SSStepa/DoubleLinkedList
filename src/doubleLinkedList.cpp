@@ -18,7 +18,7 @@ WORK_RES ListCtor(doubleLinkedList_t *list ON_DBG(, const char *listVariableName
 
     list -> free        = 1;
     list -> listLen     = LIST_INIT_SIZE;
-    list -> nodesAmount = 1;
+    list -> nodesAmount = 0;
     list -> list    = (doubleLinkedListNode_t *) calloc(LIST_INIT_SIZE, sizeof(doubleLinkedListNode_t));
     if (list -> list == NULL) {
         return $ERR(NOMEM, "ERROR WHILE TRYING TO CREATE LIST: NOT ENOUGH MEMORY");
@@ -146,7 +146,7 @@ WORK_RES ListGetNextElem(doubleLinkedList_t *list, size_t ind, size_t *nextInd)
     ON_DBG(
         RUN_COMMAND(ListVerify(list), "WRONG LIST WHILE TRYING TO GET NEXT ELEMENT TO INDEX");
         RUN_COMMAND(ListDump(list), "WRONG LIST TO DUMP");
-        if (ind == (list -> list)[0].prev || (list -> list)[ind].prev == -1)
+        if (ind == (size_t) (list -> list)[0].prev || (list -> list)[ind].prev == -1)
             return $ERR(WRIN, "WRONG INDEX TO GET ELEMENT");
     )
 
@@ -168,7 +168,7 @@ WORK_RES ListGetPrevElem(doubleLinkedList_t *list, size_t ind, size_t *prevInd)
     ON_DBG(
         RUN_COMMAND(ListVerify(list), "WRONG LIST WHILE TRYING TO GET PREV ELEMENT");
         RUN_COMMAND(ListDump(list), "WRONG LIST TO DUMP");
-        if (ind == (list -> list)[0].next || (list -> list)[ind].prev == -1)
+        if (ind == (size_t) (list -> list)[0].next || (list -> list)[ind].prev == -1)
             return $ERR(WRIN, "WRONG INDEX TO GET ELEMENT");
     )
 
@@ -281,6 +281,8 @@ WORK_RES ListAddNewNode(doubleLinkedList_t *list, size_t NodeInd, listNodeVal No
     (list -> list)[list -> free].prev                 = NodeInd;
     (list -> list)[NodeInd].next                      = list -> free;
 
+    list -> nodesAmount++;
+
     list -> free = freeTemp;
     if (list -> free == -1) {
         RUN_COMMAND(ListResizeUp(list), "PROBLEM WHILE TRYING TO RESIZE LIST UP");
@@ -316,6 +318,7 @@ WORK_RES ListDeleteNode(doubleLinkedList_t *list, size_t NodeInd)
     (list -> list)[NodeInd].next = list -> free;
     (list -> list)[NodeInd].prev = -1;
 
+    list -> nodesAmount--;
     list -> free = NodeInd;
 
     ON_DBG(
@@ -347,6 +350,7 @@ WORK_RES ListDump(doubleLinkedList_t *list)
     )
 
     LOG_PRINTF("List text dump:\n");
+    LOG_PRINTF("free = <%zd>\nnodesAmount = <%zu>\nlistLen = <%zu>\n", list -> free, list -> nodesAmount, list -> listLen);
     LOG_PRINTF("val        next       prev\n");
     for (size_t ind = 0; ind < list -> listLen; ind++) {
         LOG_PRINTF("<%4d>  <%4zd>  <%4zd>\n", (list -> list)[ind].val, (list -> list)[ind].next, (list -> list)[ind].prev);
@@ -354,7 +358,10 @@ WORK_RES ListDump(doubleLinkedList_t *list)
     LOG_PRINTF("List text dump end\n");
     LOG_PRINTF("List graphviz dump:\n");
 
-    // RUN_COMMAND(GenerateGraphvizFile(list), "PROBLEM WHILE TRYING TO GENERATE GRAPHVIZ FILE");
+    char *fileWithPictureName = {};
+    RUN_COMMAND(GenerateGraphvizFile(list, &fileWithPictureName), "PROBLEM WHILE TRYING TO GENERATE GRAPHVIZ FILE");
+    LOG_PRINTF("<img src=\"%s\">", fileWithPictureName);
+    free(fileWithPictureName);
 
     LOG_PRINTF("List graphviz dump end\n");
 
@@ -366,11 +373,128 @@ WORK_RES ListDump(doubleLinkedList_t *list)
 
 WORK_RES ListVerify(doubleLinkedList_t *list)
 {
+    assert(list);
+
+    if (list -> nodesAmount >= list -> listLen)
+        return $ERR(WRIN, "LIST STRUCTURE IS UNVALID: NODES AMOUNT IS BIGGER THEN LIST LEN");
+    
+    ssize_t node = 0;
+    for (size_t ind = 0; ind <= list -> nodesAmount; ind++) {
+        if ((list -> list)[node].prev == -1)
+            return $ERR(WRLINK, "ELEMENT WITH PREV -1 IN LIST <%s> AT NODE <%zu>", list -> debuggingInfo.VariableName, node);
+
+        if ((list -> list)[(list -> list)[node].next].prev != node)
+            return $ERR(WRLINK, "NEXT != PREV IN LIST <%s> WITH NODE <%zu>", list -> debuggingInfo.VariableName, node);
+
+        if ((list -> list)[node].next >= (ssize_t) list -> listLen)
+            return $ERR(WRLINK, "ELEMENT WITH IND <%zu> POINTS OUT OF LIST", node);
+        
+        node = (list -> list)[node].next;
+    }
+    if (node != 0)
+        return $ERR(WRLINK, "DOES NOT CAME BACK TO THE 0 NODE NOW AT <%zu>", node);
+    
+    if (list -> free != -1)
+        node = (size_t) list -> free;
+    else
+        return $ERR(WRIN, "FULL LIST WAS GIVEN TO VERIFY");
+
+    for (size_t ind = 0; ind < list -> listLen - list -> nodesAmount - 2; ind++) {
+        if ((list -> list)[node].prev != -1)
+            return $ERR(WRLINK, "NOT BLANK NODE IN LIST FREE WITH INDEX <%zu>", node);
+
+        if ((list -> list)[node].next >= (ssize_t) list -> listLen)
+            return $ERR(WRLINK, "FREE ELEMENT WITH IND <%zu> POINTS OUT OF LIST to <%zd>", node, (list -> list)[node].next);
+        node = (list -> list)[node].next;
+    }
+    if ((list -> list)[node].next != -1)
+        return $ERR(WRLINK, "LAST ELELEMENT IF FREE WITH INDEX <%zu> DOESN'T HAVE -1 IN NEXT FIELD", node);
+
     return OK;
 }
 
-WORK_RES GenerateGraphvizFile(doubleLinkedList_t *list)
+WORK_RES InitLogDir()
+{
+    time_t rawtime;
+    struct tm *timeinfo;
+    char folderName[NAME_MAX_LENGTH];
+
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+
+    strftime(folderName, sizeof(folderName), "%Y-%m-%d_%H-%M-%S", timeinfo);
+    if (_mkdir(folderName) != 0)
+        return $ERR(WRIN, "ERROR WHILE TRYING TO CREATE LOG FOLDER");
+    if (_chdir(folderName) != 0)
+        return $ERR(WRIN, "ERROR WHILE TRYING TO CD LOG FOLDER");
+    
+    return OK;
+}
+
+WORK_RES GenerateGraphvizFile(doubleLinkedList_t *list, char **PictureFileName)
 {
     assert(list);
+    static size_t callNum = 0;
+    callNum++;
+    char commandName[MAX_MESS_LENGTH] = {};
+    char *fileName = (char *) calloc(NAME_MAX_LENGTH, sizeof(char));
+    sprintf(fileName, "%s.txt", GRAPHVIZ_FILE_BASE);
 
+    FILE *outFile = fopen(fileName, "w");
+    if (outFile == NULL)
+        return $ERR(WRIN, "IMPOSSIBLE TO OPEN GRAPHVIZ FILE");
+
+    fprintf(outFile, "digraph {\nrankdir = LR;\nsplines=true;\n");
+    fprintf(outFile, "node [shape=Mrecord, style=filled]\n");
+
+    const char *color     = "";
+    const char *fillColor = "";
+    for (size_t ind = 0; ind < list -> listLen; ind++) {
+        if (ind == 0) {
+            color     = "#171917";
+            fillColor = "#888a88";
+        } else if ((list -> list)[ind].prev >= 0) {
+            color     = "#008000";
+            fillColor = "#c0FFc0";
+        } else if ((list -> list)[ind].prev == -1) {
+            color     = "#000080";
+            fillColor = "#c0c0FF";
+        } else {
+            color     = "#800000";
+            fillColor = "#e43131";
+        }
+        fprintf(outFile, "N%zu [label=\"Index: %zu | {prev: %zd | next: %zd} | Val: %d\", fillcolor=\"%s\", color=\"%s\"];\n",
+            ind, ind, (list -> list)[ind].prev, (list -> list)[ind].next, (list -> list)[ind].val, fillColor, color);
+    }
+    for (size_t ind = 0; ind < list -> listLen - 1; ind++) {
+        fprintf(outFile, "N%zu -> N%zu[color=\"white\", weight=100];\n", ind, ind + 1);
+    }
+
+    const char *lineStyle = "";
+    for (ssize_t ind = 0; ind < (ssize_t) list -> listLen - 1; ind++) {
+        lineStyle = "";
+        if ((list -> list)[(list -> list)[ind].next].prev != ind) {
+            if ((list -> list)[(list -> list)[ind].next].prev != -1) {
+                lineStyle = "color=\"#e62222\", width=20";
+            }
+        } else {
+            lineStyle = "dir=both";
+        }
+        fprintf(outFile, "N%zu -> N%zu [%s];\n", ind, (list -> list)[ind].next, lineStyle);
+    }
+    fprintf(outFile, "Head [color=\"#846a04\", fillcolor=\"#f5f74e\"];\n");
+    fprintf(outFile, "Tail [color=\"#5d0367\", fillcolor=\"#db4ef7\"];\n");
+    fprintf(outFile, "Free [color=\"#090969\", fillcolor=\"#5454ff\"];\n");
+    fprintf(outFile, "Head -> N%zu;\n Tail -> N%zu;\n Free -> N%zu;\n", (list -> list)[0].next, (list -> list)[0].prev, list -> free);
+
+    fprintf(outFile, "}\n");
+
+    fclose(outFile);
+
+    sprintf(fileName, "%s%zu.png", GRAPHVIZ_FILE_BASE, callNum);
+    sprintf(commandName, "\"\"C:\\Program Files\\Graphviz\\bin\\dot.exe\" .\\dumpGraphviz.txt -Tpng -o .\\%s\"", fileName);
+    system(commandName);
+    *PictureFileName = fileName;
+
+    return OK;
 }

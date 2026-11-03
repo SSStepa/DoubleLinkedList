@@ -2,12 +2,16 @@
 #define DOUBLE_LINKED_LIST
 
 #include <stdio.h>
+#include <direct.h>
 #include "basic.h"
 
 typedef int listNodeVal;
 
-const int LIST_INIT_SIZE = 20;
-const int RESIZE_UP_SIZE = 2;
+const int LIST_INIT_SIZE  = 10;
+const int RESIZE_UP_SIZE  = 2;
+
+const int NAME_MAX_LENGTH = 80;
+const char *const GRAPHVIZ_FILE_BASE = "dumpGraphviz";
 
 ON_DBG(
     const listNodeVal POISON_VAL = -6767;
@@ -23,7 +27,7 @@ struct doubleLinkedList_t {
     doubleLinkedListNode_t *list;
     size_t listLen;
     size_t nodesAmount;
-    size_t free;
+    ssize_t free;
 
     ON_DBG(
         debuggingInfo_t debuggingInfo;
@@ -42,8 +46,12 @@ WORK_RES ListGetElementByNumber(doubleLinkedList_t *list, size_t numberInList, s
 WORK_RES ListGetElementByValue (doubleLinkedList_t *list, listNodeVal nodeVal, size_t *elemInd);
 
 WORK_RES ListDump(doubleLinkedList_t *list);
+WORK_RES GenerateGraphvizFile(doubleLinkedList_t *list, char **PictureFileName);
+WORK_RES InitLogDir();
+
 WORK_RES ListVerify(doubleLinkedList_t *list);
 
+WORK_RES ListResizeUp(doubleLinkedList_t *list);
 WORK_RES ListAddNewNode(doubleLinkedList_t *list, size_t nodeInd, listNodeVal nodeVal);
 WORK_RES ListDeleteNode(doubleLinkedList_t *list, size_t NodeInd);
 
