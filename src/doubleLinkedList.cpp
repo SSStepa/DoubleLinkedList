@@ -463,7 +463,7 @@ WORK_RES GenerateGraphvizFile(doubleLinkedList_t *list, char **PictureFileName)
             color     = "#800000";
             fillColor = "#e43131";
         }
-        fprintf(outFile, "N%zu [label=\"Index: %zu | {prev: %zd | next: %zd} | Val: %d\", fillcolor=\"%s\", color=\"%s\"];\n",
+        fprintf(outFile, "N%zu [label=\" <n> Index: %zu | {prev: %zd | next: %zd} | <p> Val: %d\", fillcolor=\"%s\", color=\"%s\"];\n",
             ind, ind, (list -> list)[ind].prev, (list -> list)[ind].next, (list -> list)[ind].val, fillColor, color);
     }
     for (size_t ind = 0; ind < list -> listLen - 1; ind++) {
@@ -471,21 +471,29 @@ WORK_RES GenerateGraphvizFile(doubleLinkedList_t *list, char **PictureFileName)
     }
 
     const char *lineStyle = "";
+    const char *placeToCon = "";
     for (ssize_t ind = 0; ind < (ssize_t) list -> listLen - 1; ind++) {
         lineStyle = "";
         if ((list -> list)[(list -> list)[ind].next].prev != ind) {
             if ((list -> list)[(list -> list)[ind].next].prev != -1) {
-                lineStyle = "color=\"#e62222\", width=20";
-            }
+                lineStyle = "color=\"#e62222\", penwidth=3, constraint=false, tailport=nw, headport=ne";
+                placeToCon = ":n";
+            } else 
+                placeToCon = ":p";
         } else {
-            lineStyle = "dir=both";
+            lineStyle = "dir=both, tailport=nw, headport=ne";
+            placeToCon = ":n";
         }
-        fprintf(outFile, "N%zu -> N%zu [%s];\n", ind, (list -> list)[ind].next, lineStyle);
+        fprintf(outFile, "N%zu%s -> N%zu%s [%s];\n", ind, placeToCon, (list -> list)[ind].next, placeToCon, lineStyle);
     }
+
     fprintf(outFile, "Head [color=\"#846a04\", fillcolor=\"#f5f74e\"];\n");
     fprintf(outFile, "Tail [color=\"#5d0367\", fillcolor=\"#db4ef7\"];\n");
     fprintf(outFile, "Free [color=\"#090969\", fillcolor=\"#5454ff\"];\n");
-    fprintf(outFile, "Head -> N%zu;\n Tail -> N%zu;\n Free -> N%zu;\n", (list -> list)[0].next, (list -> list)[0].prev, list -> free);
+    
+    fprintf(outFile, "Head -> N%zu:n [color=\"#846a04\"];\n", (list -> list)[0].next);
+    fprintf(outFile, "Tail -> N%zu:p [color=\"#5d0367\"];\n", (list -> list)[0].prev);
+    fprintf(outFile, "Free -> N%zu:p [color=\"#090969\"];\n", list -> free);
 
     fprintf(outFile, "}\n");
 

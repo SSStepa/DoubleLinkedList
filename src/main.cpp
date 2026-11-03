@@ -11,7 +11,15 @@ int main()
     LIST_CTOR(&linkedList);
     ListAddNewNode(&linkedList, 0, 5);
     ListAddNewNode(&linkedList, 0, 6);
+    ListAddNewNode(&linkedList, 1, 7);
+    ListAddNewNode(&linkedList, 1, 7);
+    ListAddNewNode(&linkedList, 1, 7);
     ListDeleteNode(&linkedList, 1);
+    ListDeleteNode(&linkedList, 4);
+    ListAddNewNode(&linkedList, 2, 7);
+    linkedList.list[2].prev = -4;
+    ListDump(&linkedList);
+
     ListDtor(&linkedList);    
 
     EndLog();

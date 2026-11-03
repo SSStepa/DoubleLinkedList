@@ -1,0 +1,39 @@
+digraph {
+rankdir = LR;
+splines=ortho;
+node [shape=Mrecord, style=filled]
+N0 [label=" <n> Index: 0 | {prev: 3 | next: 2} | <p> Val: 0", fillcolor="#888a88", color="#171917"];
+N1 [label=" <n> Index: 1 | {prev: -1 | next: 6} | <p> Val: -6767", fillcolor="#c0c0FF", color="#000080"];
+N2 [label=" <n> Index: 2 | {prev: -4 | next: 4} | <p> Val: 6", fillcolor="#e43131", color="#800000"];
+N3 [label=" <n> Index: 3 | {prev: 5 | next: 0} | <p> Val: 7", fillcolor="#c0FFc0", color="#008000"];
+N4 [label=" <n> Index: 4 | {prev: 2 | next: 5} | <p> Val: 7", fillcolor="#c0FFc0", color="#008000"];
+N5 [label=" <n> Index: 5 | {prev: 4 | next: 3} | <p> Val: 7", fillcolor="#c0FFc0", color="#008000"];
+N6 [label=" <n> Index: 6 | {prev: -1 | next: 7} | <p> Val: -6767", fillcolor="#c0c0FF", color="#000080"];
+N7 [label=" <n> Index: 7 | {prev: -1 | next: 8} | <p> Val: -6767", fillcolor="#c0c0FF", color="#000080"];
+N8 [label=" <n> Index: 8 | {prev: -1 | next: 9} | <p> Val: -6767", fillcolor="#c0c0FF", color="#000080"];
+N9 [label=" <n> Index: 9 | {prev: -1 | next: -1} | <p> Val: -6767", fillcolor="#c0c0FF", color="#000080"];
+N0 -> N1[color="white", weight=100];
+N1 -> N2[color="white", weight=100];
+N2 -> N3[color="white", weight=100];
+N3 -> N4[color="white", weight=100];
+N4 -> N5[color="white", weight=100];
+N5 -> N6[color="white", weight=100];
+N6 -> N7[color="white", weight=100];
+N7 -> N8[color="white", weight=100];
+N8 -> N9[color="white", weight=100];
+N0:n -> N2:n [color="#e62222", penwidth=3, constraint=false, tailport=nw, headport=ne];
+N1:p -> N6:p [];
+N2:n -> N4:n [dir=both, tailport=nw, headport=ne];
+N3:n -> N0:n [dir=both, tailport=nw, headport=ne];
+N4:n -> N5:n [dir=both, tailport=nw, headport=ne];
+N5:n -> N3:n [dir=both, tailport=nw, headport=ne];
+N6:p -> N7:p [];
+N7:p -> N8:p [];
+N8:p -> N9:p [];
+Head [color="#846a04", fillcolor="#f5f74e"];
+Tail [color="#5d0367", fillcolor="#db4ef7"];
+Free [color="#090969", fillcolor="#5454ff"];
+Head -> N2:n [color="#846a04"];
+Tail -> N3:p [color="#5d0367"];
+Free -> N1:p [color="#090969"];
+}
