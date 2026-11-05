@@ -14,10 +14,11 @@ int main()
     ListAddNewNode(&linkedList, 1, 7);
     ListAddNewNode(&linkedList, 1, 7);
     ListAddNewNode(&linkedList, 1, 7);
+    ListAddNewNode(&linkedList, 1, 7);
     ListDeleteNode(&linkedList, 1);
     ListDeleteNode(&linkedList, 4);
     ListAddNewNode(&linkedList, 2, 7);
-    linkedList.list[2].prev = -4;
+    linkedList.list[3].prev = -20;
     ListDump(&linkedList);
 
     ListDtor(&linkedList);    

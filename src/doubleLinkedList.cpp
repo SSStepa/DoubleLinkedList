@@ -3,12 +3,16 @@
 WORK_RES ListCtor(doubleLinkedList_t *list ON_DBG(, const char *listVariableName, const char *fileCreationName, const char *functionCreationName, int lineCreationNumber))
 {
     assert(list);
+    ON_DBG(
     assert(listVariableName);
     assert(fileCreationName);
     assert(functionCreationName);
     assert(lineCreationNumber > 0);
+    );
 
+    ON_DBG(
     WORK_RES statusCode = OK;
+    );
 
     $INFO("STARTING initialization of list %s", ++listVariableName); // to skip "&" in the begining of name
     ON_DBG(
@@ -92,7 +96,7 @@ WORK_RES ListDtor(doubleLinkedList_t *list)
     
     $INFO("ENDING of deconstruction of list");
 
-    return OK;
+    return statusCode;
 }
 
 WORK_RES ListGetHead(doubleLinkedList_t *list, size_t *headInd)
@@ -203,7 +207,7 @@ WORK_RES ListGetElementByNumber(doubleLinkedList_t *list, size_t numberInList, s
 
     $INFO("ENDING getting element of list %s to with number <%zu>", (list -> debuggingInfo).VariableName, numberInList);
 
-    return OK;
+    return statusCode;
 }
 
 WORK_RES ListGetElementByValue(doubleLinkedList_t *list, listNodeVal nodeVal, size_t *elemInd)
@@ -224,7 +228,7 @@ WORK_RES ListGetElementByValue(doubleLinkedList_t *list, listNodeVal nodeVal, si
         *elemInd = (list -> list)[*elemInd].next;
         if ((list -> list)[*elemInd].val == nodeVal) {
             $INFO("ENDING getting element of list %s to with value <%d>", (list -> debuggingInfo).VariableName, nodeVal);
-            return OK;
+            return statusCode;
         }
     }
 
@@ -328,7 +332,7 @@ WORK_RES ListDeleteNode(doubleLinkedList_t *list, size_t NodeInd)
     )
 
     $INFO("ENDING deleting element form list %s with index <%zu>", (list -> debuggingInfo).VariableName, NodeInd);
-    return OK;
+    return statusCode;
 }
 
 WORK_RES ListDump(doubleLinkedList_t *list)
@@ -374,7 +378,8 @@ WORK_RES ListDump(doubleLinkedList_t *list)
 WORK_RES ListVerify(doubleLinkedList_t *list)
 {
     assert(list);
-
+    
+    ON_DBG(
     if (list -> nodesAmount >= list -> listLen)
         return $ERR(WRIN, "LIST STRUCTURE IS UNVALID: NODES AMOUNT IS BIGGER THEN LIST LEN");
     
@@ -409,6 +414,7 @@ WORK_RES ListVerify(doubleLinkedList_t *list)
     }
     if ((list -> list)[node].next != -1)
         return $ERR(WRLINK, "LAST ELELEMENT IF FREE WITH INDEX <%zu> DOESN'T HAVE -1 IN NEXT FIELD", node);
+    );
 
     return OK;
 }
@@ -445,7 +451,8 @@ WORK_RES GenerateGraphvizFile(doubleLinkedList_t *list, char **PictureFileName)
         return $ERR(WRIN, "IMPOSSIBLE TO OPEN GRAPHVIZ FILE");
 
     fprintf(outFile, "digraph {\nrankdir = LR;\nsplines=true;\n");
-    fprintf(outFile, "node [shape=Mrecord, style=filled]\n");
+    fprintf(outFile, "node [shape=Mcircle, style=filled, color=\"#800000\", fillcolor=\"#FF0000\"]\n");
+    fprintf(outFile, "edge [arrowsize=0.8, color=\"#030352\", penwidth=1]\n");
 
     const char *color     = "";
     const char *fillColor = "";
@@ -463,7 +470,7 @@ WORK_RES GenerateGraphvizFile(doubleLinkedList_t *list, char **PictureFileName)
             color     = "#800000";
             fillColor = "#e43131";
         }
-        fprintf(outFile, "N%zu [label=\" <n> Index: %zu | {prev: %zd | next: %zd} | <p> Val: %d\", fillcolor=\"%s\", color=\"%s\"];\n",
+        fprintf(outFile, "N%zu [shape=Mrecord, label=\" <n> Index: %zu | {prev: %zd | next: %zd} | <p> Val: %d\", fillcolor=\"%s\", color=\"%s\"];\n",
             ind, ind, (list -> list)[ind].prev, (list -> list)[ind].next, (list -> list)[ind].val, fillColor, color);
     }
     for (size_t ind = 0; ind < list -> listLen - 1; ind++) {
@@ -476,7 +483,7 @@ WORK_RES GenerateGraphvizFile(doubleLinkedList_t *list, char **PictureFileName)
         lineStyle = "";
         if ((list -> list)[(list -> list)[ind].next].prev != ind) {
             if ((list -> list)[(list -> list)[ind].next].prev != -1) {
-                lineStyle = "color=\"#e62222\", penwidth=3, constraint=false, tailport=nw, headport=ne";
+                lineStyle = "arrowsize=1.5, color=\"#e62222\", penwidth=4, constraint=false, tailport=nw, headport=ne";
                 placeToCon = ":n";
             } else 
                 placeToCon = ":p";
@@ -487,13 +494,13 @@ WORK_RES GenerateGraphvizFile(doubleLinkedList_t *list, char **PictureFileName)
         fprintf(outFile, "N%zu%s -> N%zu%s [%s];\n", ind, placeToCon, (list -> list)[ind].next, placeToCon, lineStyle);
     }
 
-    fprintf(outFile, "Head [color=\"#846a04\", fillcolor=\"#f5f74e\"];\n");
-    fprintf(outFile, "Tail [color=\"#5d0367\", fillcolor=\"#db4ef7\"];\n");
-    fprintf(outFile, "Free [color=\"#090969\", fillcolor=\"#5454ff\"];\n");
+    fprintf(outFile, "HEAD [shape=record, color=\"#846a04\", fillcolor=\"#fbff00\"];\n");
+    fprintf(outFile, "TAIL [shape=record, color=\"#5d0367\", fillcolor=\"#6601d2\", fontcolor=\"#FFFFFF\"];\n");
+    fprintf(outFile, "FREE [shape=record, color=\"#2323f7\", fillcolor=\"#060695\", fontcolor=\"#FFFFFF\"];\n");
     
-    fprintf(outFile, "Head -> N%zu:n [color=\"#846a04\"];\n", (list -> list)[0].next);
-    fprintf(outFile, "Tail -> N%zu:p [color=\"#5d0367\"];\n", (list -> list)[0].prev);
-    fprintf(outFile, "Free -> N%zu:p [color=\"#090969\"];\n", list -> free);
+    fprintf(outFile, "HEAD -> N%zu:p [color=\"#846a04\", weight=10];\n", (list -> list)[0].next);
+    fprintf(outFile, "TAIL -> N%zu:p [color=\"#5d0367\", weight=10];\n", (list -> list)[0].prev);
+    fprintf(outFile, "FREE -> N%zu:n [color=\"#090969\", weight=10];\n", list -> free);
 
     fprintf(outFile, "}\n");
 

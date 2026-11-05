@@ -165,7 +165,6 @@ WORK_RES EndError();
     fprintf(logFile, __VA_ARGS__); \
     fflush(logFile);
 
-
 #define DEBUGGER
 
 #ifdef DEBUGGER

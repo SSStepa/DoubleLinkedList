@@ -74,6 +74,26 @@ if (удалили хвост)
 
 # Отладка и обработка ошибок
 Все функции возвращают результат своей работы в виде значения enum WORK_RES. 
+``` C
+enum WORK_RES {
+    OK       = 0, // all good
+    WRIN     = 1, // function got bad args
+    NOMEM    = 2, // not enough memory
+    FILEERR  = 4, // no file to open.
+ 
+    STACK_STRUCT     = 10, // problem with struct
+    STACK_DATA       = 11, // wrong data format
+    STACK_CAP        = 12, // zero capacity
+    STACK_OVERFLOW   = 13,  // size > capacity
+    STACK_UNDERFLOW  = 14, // size < 0;
+    STACK_CANARY_RIP = 15, // rip of stack canary;
+
+    TAKEN_LABEL = 20, // label already has it's 
+    NO_LABEL = 21, // label does not exist
+
+    WRLINK = 30, // wrong link between nodes in list
+};
+```
 
 В отладочном режиме каждая функция в начале и в конце своей работы выводит информацию о том, что она вызвана и как проходит её работа.  
 
@@ -86,6 +106,19 @@ if (удалили хвост)
 - наличие зацикленности
 - соответствие данного и предыдущего для последующего 
 - валидность списка пустых элементов(связность, что нет элементов не вошедших ни туда ни туда)
+
+В случае обнаружения ошибки информация будет выведена в лог файл.
+
+Если передать дампу ошибочный список можно увидеть одно из следующих картин:
+
+Указывает на элемент не в массиве:
+![debug1.jpg](debug1.jpg)
+
+Поле prev и next не совпадают:
+![debug2.png](debug2.png)
+
+Поле prev для элемента не валидно:
+![debug3.png](debug3.png)
 
 # Компиляция
 
