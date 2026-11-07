@@ -350,7 +350,7 @@ WORK_RES ListDump(doubleLinkedList_t *list)
             (list -> debuggingInfo).lineCreationNumber,
             (list -> debuggingInfo).functionCreationName
         )
-        LOG_PRINTF("<h3>It has error status %d and error message <%s> now </h3>\n", (list -> debuggingInfo).err, (list -> debuggingInfo).errorText);
+        LOG_PRINTF("<h2>It has error status %d and error message <%s> now </h2>\n", (list -> debuggingInfo).err, (list -> debuggingInfo).errorText);
     )
 
     LOG_PRINTF("List text dump:\n");
